@@ -476,7 +476,7 @@ public class PostServiceImpl implements PostService {
             PostEntity postEntity = post.get();
             Timestamp newPublishedAt = publishedAt.getPublishedAt();
             postEntity.setPublishedAt(newPublishedAt);
-            if(postEntity.getStatus() != null) {
+            if (postEntity.getStatus() != null) {
                 if (newPublishedAt.before(new Timestamp(System.currentTimeMillis()))) {
                     if (postEntity.getStatus().equals(PostStatus.PLANNED)) {
                         postEntity.setStatus(PostStatus.PUBLISHED);

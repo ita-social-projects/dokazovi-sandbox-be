@@ -61,6 +61,7 @@ public class PostServiceImpl implements PostService {
     private final DirectionServiceImpl directionService;
     private final GoogleAnalytics googleAnalytics;
     private final AuthorRepository authorRepository;
+    private final ThreadLocal<PostEntity> postEntityThreadLocal = new ThreadLocal<>();
 
     @Override
     public PostDTO findPostById(Integer postId) {
@@ -555,7 +556,9 @@ public class PostServiceImpl implements PostService {
                     mappedEntity
             );
 
-            if (checkAuthority(userPrincipal,"DELETE_OWN_POST") || checkAuthority(userPrincipal,"DELETE_POST")) {
+            if (checkAuthority(userPrincipal,"DELETE_OWN_POST") ||
+                    checkAuthority(userPrincipal,"DELETE_POST")) {
+                postEntityThreadLocal.set(mappedEntity);
                 postRepository.delete(mappedEntity);
             } else {
                 throw new ForbiddenPermissionsException();
@@ -566,5 +569,13 @@ public class PostServiceImpl implements PostService {
         }
 
         return true;
+    }
+
+    public PostEntity getPostEntityFromThreadLocal() {
+        return postEntityThreadLocal.get();
+    }
+
+    public void clearPostEntityThreadLocal() {
+        postEntityThreadLocal.remove();
     }
 }

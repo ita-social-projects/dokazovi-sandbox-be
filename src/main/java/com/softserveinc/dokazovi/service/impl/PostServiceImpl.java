@@ -551,12 +551,16 @@ public class PostServiceImpl implements PostService {
         if (postToDelete.isPresent()) {
             PostEntity mappedEntity = postToDelete.get();
 
+            Integer userId = userPrincipal.getId();
+            Integer authorId = authorRepository.getByProfileId(userId).getId();
+
             final Set<DirectionEntity> directionsToUpdate = getDirectionsFromPostsEntities(
                     postToDelete,
                     mappedEntity
             );
 
-            if (checkAuthority(userPrincipal,"DELETE_OWN_POST") ||
+            if ((authorId.equals(mappedEntity.getAuthor().getId()) &&
+                    checkAuthority(userPrincipal,"DELETE_OWN_POST")) ||
                     checkAuthority(userPrincipal,"DELETE_POST")) {
                 postEntityThreadLocal.set(mappedEntity);
                 postRepository.delete(mappedEntity);

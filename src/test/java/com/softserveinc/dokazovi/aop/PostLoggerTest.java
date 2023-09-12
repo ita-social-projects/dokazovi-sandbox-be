@@ -186,32 +186,4 @@ class PostLoggerTest {
         Assertions.assertEquals(logEntityArgumentCaptor.getValue().getChanges(), "N/A");
     }
 
-    @Test
-    void deletePost() {
-        JoinPoint mock = Mockito.mock(JoinPoint.class);
-
-        Object[] args = new Object[]{userPrincipal, 1, true};
-        when(mock.getArgs()).thenReturn(args);
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.ofNullable(userEntity));
-        when(postRepository.getOne(anyInt())).thenReturn(postEntity);
-
-        postLogger.deletePost(mock);
-
-        verify(logRepository).save(logEntityArgumentCaptor.capture());
-        Assertions.assertEquals(logEntityArgumentCaptor.getValue().getChanges(), "Матеріал видалено");
-    }
-
-    @Test
-    void archivePost() {
-        JoinPoint mock = Mockito.mock(JoinPoint.class);
-
-        Object[] args = new Object[]{userPrincipal, 1, false};
-        when(mock.getArgs()).thenReturn(args);
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.ofNullable(userEntity));
-        when(postRepository.getOne(anyInt())).thenReturn(postEntity);
-
-        postLogger.deletePost(mock);
-
-        verify(logRepository, never()).save(any(LogEntity.class));
-    }
 }

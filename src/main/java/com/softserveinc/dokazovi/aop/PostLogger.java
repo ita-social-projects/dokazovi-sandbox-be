@@ -89,7 +89,7 @@ public class PostLogger {
         PostEntity postEntity = service.getPostEntityFromThreadLocal();
         if (Boolean.TRUE.equals(returnVal) && postEntity != null) {
             UserPrincipal userPrincipal = getArgumentFromArrayByClassType(joinPoint.getArgs(), UserPrincipal.class);
-            makeEntryInLogs(postEntity.getTitle(), userPrincipal, "Матеріал видалено", null);
+            makeEntryInLogs(postEntity.getTitle(), userPrincipal, "Матеріал видалено", postEntity.getId());
             service.clearPostEntityThreadLocal();
         }
     }

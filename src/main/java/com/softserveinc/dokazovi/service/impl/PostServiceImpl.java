@@ -543,7 +543,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public Boolean removePostById(UserPrincipal userPrincipal, Integer postId, boolean delete)
+    public Boolean removePostById(UserPrincipal userPrincipal, Integer postId)
             throws EntityNotFoundException {
 
         Optional<PostEntity> postToDelete = postRepository.findById(postId);

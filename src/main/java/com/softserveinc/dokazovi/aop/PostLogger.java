@@ -9,6 +9,7 @@ import com.softserveinc.dokazovi.repositories.LogRepository;
 import com.softserveinc.dokazovi.repositories.PostRepository;
 import com.softserveinc.dokazovi.repositories.UserRepository;
 import com.softserveinc.dokazovi.security.UserPrincipal;
+import com.softserveinc.dokazovi.service.impl.PostServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -79,19 +80,18 @@ public class PostLogger {
         return joinPoint;
     }
 
-    @AfterReturning("execution(* com.softserveinc.dokazovi.service.impl.PostServiceImpl.removePostById("
-            + "com.softserveinc.dokazovi.security.UserPrincipal,"
-            + "Integer, boolean))")
-    public void deletePost(JoinPoint joinPoint) {
-        Object[] arguments = joinPoint.getArgs();
-        UserPrincipal userPrincipal = getArgumentFromArrayByClassType(arguments, UserPrincipal.class);
-        Integer postId = getArgumentFromArrayByClassType(arguments, Integer.class);
-        boolean flag = getArgumentFromArrayByClassType(arguments, Boolean.class);
-        if (!flag) {
-            return;
+    @AfterReturning(
+            pointcut = "execution(* com.softserveinc.dokazovi.service.impl.PostServiceImpl.removePostById(..))",
+            returning = "returnVal"
+    )
+    public void deletePost(JoinPoint joinPoint, Object returnVal) {
+        PostServiceImpl service = (PostServiceImpl) joinPoint.getTarget();
+        PostEntity postEntity = service.getPostEntityFromThreadLocal();
+        if (Boolean.TRUE.equals(returnVal) && postEntity != null) {
+            UserPrincipal userPrincipal = getArgumentFromArrayByClassType(joinPoint.getArgs(), UserPrincipal.class);
+            makeEntryInLogs(postEntity.getTitle(), userPrincipal, "Матеріал видалено", postEntity.getId());
+            service.clearPostEntityThreadLocal();
         }
-        PostEntity postEntity = postRepository.getOne(postId);
-        makeEntryInLogs(postEntity.getTitle(), userPrincipal, "Матеріал видалено", null);
     }
 
     private void makeEntryInLogs(String title, UserPrincipal userPrincipal, String changes, Integer postId) {

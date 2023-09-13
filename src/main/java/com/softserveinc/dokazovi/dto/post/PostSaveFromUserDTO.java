@@ -28,6 +28,7 @@ public class PostSaveFromUserDTO {
     @NotNull(message = "Author id is required")
     private Integer authorId;
 
+    @NotBlank
     private String title;
 
     private String videoUrl;

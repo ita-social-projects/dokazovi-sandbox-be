@@ -61,6 +61,7 @@ public class PostServiceImpl implements PostService {
     private final DirectionServiceImpl directionService;
     private final GoogleAnalytics googleAnalytics;
     private final AuthorRepository authorRepository;
+    private final ThreadLocal<PostEntity> postEntityThreadLocal = new ThreadLocal<>();
 
     @Override
     public PostDTO findPostById(Integer postId) {
@@ -220,49 +221,6 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public Boolean removePostById(UserPrincipal userPrincipal, Integer postId, boolean delete)
-            throws EntityNotFoundException {
-
-        Optional<PostEntity> oldEntity = postRepository.findById(postId);
-
-        PostEntity mappedEntity = postRepository
-                .findById(postId)
-                .orElseThrow(() -> new EntityNotFoundException(String.format("Post with %s not found", postId)));
-
-        Integer userId = userPrincipal.getId();
-        Integer authorId = mappedEntity.getAuthor().getId();
-
-        final Set<DirectionEntity> directionsToUpdate = getDirectionsFromPostsEntities(
-                oldEntity,
-                mappedEntity
-        );
-
-        if ((userId.equals(authorId) && userPrincipal.getAuthorities().stream().anyMatch(grantedAuthority ->
-                grantedAuthority.getAuthority().equals("DELETE_OWN_POST"))) ||
-                (!userId.equals(authorId) && userPrincipal.getAuthorities().stream().anyMatch(grantedAuthority ->
-                        grantedAuthority.getAuthority().equals("DELETE_POST")))) {
-            if (delete) {
-                postRepository.delete(mappedEntity);
-            } else {
-                mappedEntity.setStatus(PostStatus.ARCHIVED);
-                mappedEntity.setModifiedAt(Timestamp.valueOf(LocalDateTime.now()));
-                postRepository.save(mappedEntity);
-            }
-
-        }
-
-        if ((!userId.equals(authorId) || userPrincipal.getAuthorities().stream().noneMatch(grantedAuthority ->
-                grantedAuthority.getAuthority().equals("DELETE_OWN_POST")))
-                && userPrincipal.getAuthorities().stream().noneMatch(grantedAuthority ->
-                grantedAuthority.getAuthority().equals("DELETE_POST"))) {
-            throw new ForbiddenPermissionsException();
-        }
-        directionService.updateDirectionsHasPostsStatusByEntities(directionsToUpdate);
-        return true;
-    }
-
-    @Override
-    @Transactional
     public Boolean updatePostById(UserPrincipal userPrincipal, PostSaveFromUserDTO postDTO)
             throws EntityNotFoundException {
 
@@ -273,7 +231,7 @@ public class PostServiceImpl implements PostService {
         Integer authorId = mappedEntity.getAuthor().getId();
 
         if (mappedEntity.getStatus().equals(PostStatus.ARCHIVED)) {
-            return removePostById(userPrincipal, mappedEntity.getId(), false);
+            mappedEntity.setStatus(PostStatus.ARCHIVED);
         }
 
         if (userId.equals(authorId) && checkAuthority(userPrincipal, "UPDATE_OWN_POST")) {
@@ -582,5 +540,47 @@ public class PostServiceImpl implements PostService {
         } else {
             throw new EntityNotFoundException("Post with id " + postId + " does not exist");
         }
+    }
+
+    @Override
+    @Transactional
+    public Boolean removePostById(UserPrincipal userPrincipal, Integer postId)
+            throws EntityNotFoundException {
+
+        Optional<PostEntity> postToDelete = postRepository.findById(postId);
+
+        if (postToDelete.isPresent()) {
+            PostEntity mappedEntity = postToDelete.get();
+
+            Integer userId = userPrincipal.getId();
+            Integer authorId = authorRepository.getByProfileId(userId).getId();
+
+            final Set<DirectionEntity> directionsToUpdate = getDirectionsFromPostsEntities(
+                    postToDelete,
+                    mappedEntity
+            );
+
+            if ((authorId.equals(mappedEntity.getAuthor().getId()) &&
+                    checkAuthority(userPrincipal,"DELETE_OWN_POST")) ||
+                    checkAuthority(userPrincipal,"DELETE_POST")) {
+                postEntityThreadLocal.set(mappedEntity);
+                postRepository.delete(mappedEntity);
+            } else {
+                throw new ForbiddenPermissionsException();
+            }
+            directionService.updateDirectionsHasPostsStatusByEntities(directionsToUpdate);
+        } else {
+            throw new EntityNotFoundException("Post with id " + postId + " does not exist");
+        }
+
+        return true;
+    }
+
+    public PostEntity getPostEntityFromThreadLocal() {
+        return postEntityThreadLocal.get();
+    }
+
+    public void clearPostEntityThreadLocal() {
+        postEntityThreadLocal.remove();
     }
 }

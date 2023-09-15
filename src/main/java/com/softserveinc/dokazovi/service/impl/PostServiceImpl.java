@@ -85,32 +85,25 @@ public class PostServiceImpl implements PostService {
         mappedEntity.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
         UserEntity userEntity = userRepository.getOne(userPrincipal.getId());
 
-        if (userEntity.getId().equals(postDTO.getAuthorId()) && userPrincipal.getAuthorities().stream()
+        if ((userEntity.getAuthor().getId().equals(postDTO.getAuthorId()) && userPrincipal.getAuthorities().stream()
                 .anyMatch(grantedAuthority -> grantedAuthority
-                        .getAuthority().equals("SAVE_OWN_PUBLICATION"))) {
-            mappedEntity.setAuthor(userEntity);
+                        .getAuthority().equals("SAVE_OWN_PUBLICATION"))) ||
+                userPrincipal.getAuthorities()
+                        .stream().anyMatch(grantedAuthority ->
+                                grantedAuthority.getAuthority().equals("SAVE_PUBLICATION"))) {
+
+            AuthorEntity author = authorRepository.getOne(postDTO.getAuthorId());
+            mappedEntity.setAuthor(author.getProfile());
+
+            author.setPublishedPosts(author.getPublishedPosts() + 1);
+            authorRepository.save(author);
+
             PostDTO dto = postMapper.toPostDTO(postRepository.save(mappedEntity));
             directionService.updateDirectionsHasPostsStatusByEntities(directionsToUpdate);
             return dto;
-        }
-
-        if (!userEntity.getId().equals(postDTO.getAuthorId()) && userPrincipal.getAuthorities()
-                .stream().anyMatch(grantedAuthority ->
-                        grantedAuthority.getAuthority().equals("SAVE_PUBLICATION"))) {
-            mappedEntity.setAuthor(userRepository.getOne(postDTO.getAuthorId()));
-            PostDTO dto = postMapper.toPostDTO(postRepository.save(mappedEntity));
-            directionService.updateDirectionsHasPostsStatusByEntities(directionsToUpdate);
-            return dto;
-        }
-
-        if (!userEntity.getId().equals(postDTO.getAuthorId()) || userPrincipal.getAuthorities().stream()
-                .noneMatch(grantedAuthority ->
-                        grantedAuthority.getAuthority().equals("SAVE_OWN_PUBLICATION"))
-                && userPrincipal.getAuthorities().stream().noneMatch(grantedAuthority ->
-                grantedAuthority.getAuthority().equals("SAVE_PUBLICATION"))) {
+        } else {
             throw new ForbiddenPermissionsException();
         }
-        return postMapper.toPostDTO(mappedEntity);
     }
 
     @Override

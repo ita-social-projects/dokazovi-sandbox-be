@@ -127,6 +127,11 @@ class PostServiceImplTest {
                 .name("Doctor")
                 .permissions(rolePermissions)
                 .build();
+        AuthorEntity authorEntity = AuthorEntity.builder()
+                .id(1)
+                .profile(new UserEntity())
+                .publishedPosts(88L)
+                .build();
         UserEntity author = UserEntity.builder()
                 .id(1)
                 .email("test@nail.com")
@@ -137,12 +142,12 @@ class PostServiceImplTest {
                 .avatar("test")
                 .status(UserStatus.ACTIVE)
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
-                .author(new AuthorEntity())
+                .author(authorEntity)
                 .phone("test")
                 .userProviderEntities(new HashSet<>())
                 .enabled(true)
                 .build();
-
+        authorEntity.setProfile(author);
         PostEntity postEntity = PostEntity.builder()
                 .title("title")
                 .videoUrl("videoUrl")
@@ -153,6 +158,7 @@ class PostServiceImplTest {
 
         when(postMapper.toPostEntity(any(PostSaveFromUserDTO.class))).thenReturn(postEntity);
         when(userRepository.getOne(any(Integer.class))).thenReturn(author);
+        when(authorRepository.getOne(any(Integer.class))).thenReturn(authorEntity);
         PostSaveFromUserDTO dto = PostSaveFromUserDTO.builder()
                 .authorId(1)
                 .title("title")
@@ -177,6 +183,11 @@ class PostServiceImplTest {
                 .name("Administrator")
                 .permissions(rolePermissions)
                 .build();
+        AuthorEntity authorEntity = AuthorEntity.builder()
+                .id(1)
+                .profile(new UserEntity())
+                .publishedPosts(88L)
+                .build();
         UserEntity author = UserEntity.builder()
                 .id(1)
                 .email("test@nail.com")
@@ -187,12 +198,13 @@ class PostServiceImplTest {
                 .avatar("test")
                 .status(UserStatus.ACTIVE)
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
-                .author(new AuthorEntity())
+                .author(authorEntity)
                 .phone("test")
                 .userProviderEntities(new HashSet<>())
                 .enabled(true)
                 .build();
 
+        authorEntity.setProfile(author);
         PostEntity postEntity = PostEntity.builder()
                 .title("title")
                 .videoUrl("videoUrl")
@@ -203,6 +215,7 @@ class PostServiceImplTest {
 
         when(postMapper.toPostEntity(any(PostSaveFromUserDTO.class))).thenReturn(postEntity);
         when(userRepository.getOne(any(Integer.class))).thenReturn(author);
+        when(authorRepository.getOne(any(Integer.class))).thenReturn(authorEntity);
         PostSaveFromUserDTO dto = PostSaveFromUserDTO.builder()
                 .authorId(2)
                 .title("title")
@@ -214,6 +227,7 @@ class PostServiceImplTest {
                 .build();
 
         UserPrincipal userPrincipal = UserPrincipal.create(author);
+
         postService.saveFromUser(dto, userPrincipal);
         verify(postMapper, times(1)).toPostDTO(any());
     }
@@ -227,6 +241,11 @@ class PostServiceImplTest {
                 .name("Doctor")
                 .permissions(rolePermissions)
                 .build();
+        AuthorEntity authorEntity = AuthorEntity.builder()
+                .id(1)
+                .profile(new UserEntity())
+                .publishedPosts(88L)
+                .build();
         UserEntity author = UserEntity.builder()
                 .id(1)
                 .email("test@nail.com")
@@ -237,12 +256,12 @@ class PostServiceImplTest {
                 .avatar("test")
                 .status(UserStatus.ACTIVE)
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
-                .author(new AuthorEntity())
+                .author(authorEntity)
                 .phone("test")
                 .userProviderEntities(new HashSet<>())
                 .enabled(true)
                 .build();
-
+        authorEntity.setProfile(author);
         PostEntity postEntity = PostEntity.builder()
                 .title("title")
                 .videoUrl("videoUrl")

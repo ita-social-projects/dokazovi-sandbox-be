@@ -223,8 +223,8 @@ public class PostServiceImpl implements PostService {
         Integer userId = userPrincipal.getId();
         Integer authorId = mappedEntity.getAuthor().getId();
 
-        if (mappedEntity.getStatus().equals(PostStatus.ARCHIVED)) {
-            mappedEntity.setStatus(PostStatus.ARCHIVED);
+        if (mappedEntity.getStatus().equals(PostStatus.PUBLISHED)) {
+            mappedEntity.setPublishedAt(Timestamp.valueOf(LocalDateTime.now()));
         }
 
         if (userId.equals(authorId) && checkAuthority(userPrincipal, "UPDATE_OWN_POST")) {
@@ -468,6 +468,9 @@ public class PostServiceImpl implements PostService {
             if (checkAuthority(userPrincipal, "UPDATE_POST")) {
                 if (isValidStatus(newStatus)) {
                     postEntity.setStatus(PostStatus.valueOf(newStatus));
+                    if (PostStatus.valueOf(newStatus) == PostStatus.PUBLISHED) {
+                        postEntity.setPublishedAt(Timestamp.valueOf(LocalDateTime.now()));
+                    }
                     postEntity.setModifiedAt(Timestamp.valueOf(LocalDateTime.now()));
                     saveEntity(postEntity);
                 } else {
